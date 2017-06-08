@@ -2,6 +2,9 @@ use_standard_axis = true;
 %WARNING: using add_ticks may cause MATLAB to be extremely slow if you have
 %many values
 add_ticks = false;
+%Controls if events should be drawn (this needs to be output from the java
+%program)
+draw_events = true;
 %Controls if the original vector is also drawn
 draw_both_vectors = false;
 %Actual number of seconds of the measurement
@@ -23,7 +26,19 @@ jumping_mean_Y = mean(reshape(jumping_mean_Y,20,[]))';
 %Create an x axis with seconds as values
 x_axis = linspace(0, seconds_measured, length(Y));
 
+% Draw events
+if draw_events
+    hold on;
+    for index = 1:numel(i)
+        i_loc = i(index);
+        j_loc = j(index);
+        r = rectangle('Position', [i_loc, -2, j_loc, 4], 'FaceColor', [1 0 1]);
+    end
+    hold off;
+end
+
 %Draw plot
+hold on;
 if use_standard_axis
     if draw_both_vectors
         plot(Y,'DisplayName','Y');
@@ -31,7 +46,7 @@ if use_standard_axis
     end
     plot(sliding_mean_Y,'DisplayName','sliding_mean_Y')
     if draw_both_vectors
-        hold off;
+        %hold off;
     end
 else
     if draw_both_vectors
@@ -40,9 +55,10 @@ else
     end
     plot(x_axis, sliding_mean_Y,'DisplayName','sliding_mean_Y')
     if draw_both_vectors
-        hold off;
+        %hold off;
     end
 end
+hold off;
 
 %Add horizontal reference line
 line(xlim,[0 0],'Color','k');
