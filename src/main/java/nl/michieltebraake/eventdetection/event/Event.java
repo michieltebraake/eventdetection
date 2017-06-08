@@ -10,18 +10,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Event {
+public class Event extends EventLocation {
     private String dataFile;
-    private int start;
-    private int end;
     private EventType type;
 
     private TimeSeries timeSeries;
 
     public Event(String dataFile, int start, int end, EventType type) {
+        super(start, end);
         this.dataFile = dataFile;
-        this.start = start;
-        this.end = end;
         this.type = type;
 
         buildSeries();

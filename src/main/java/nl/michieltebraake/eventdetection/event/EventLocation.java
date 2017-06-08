@@ -1,0 +1,19 @@
+package nl.michieltebraake.eventdetection.event;
+
+public class EventLocation {
+    protected int start;
+    protected int end;
+
+    public EventLocation(int start, int end) {
+        this.start = start;
+        this.end = end;
+    }
+
+    public int getStart() {
+        return start;
+    }
+
+    public int getEnd() {
+        return end;
+    }
+}
