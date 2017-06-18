@@ -2,6 +2,7 @@ package nl.michieltebraake.eventdetection.event;
 
 import com.fastdtw.timeseries.TimeSeries;
 import com.fastdtw.timeseries.TimeSeriesBase;
+import nl.michieltebraake.eventdetection.AccelerometerPoint;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,8 +17,8 @@ public class Event extends EventLocation {
 
     private TimeSeries timeSeries;
 
-    public Event(String dataFile, int start, int end, EventType type) {
-        super(start, end);
+    public Event(String dataFile, AccelerometerPoint accelerometerPoint, int start, int end, EventType type) {
+        super(accelerometerPoint, start, end);
         this.dataFile = dataFile;
         this.type = type;
 

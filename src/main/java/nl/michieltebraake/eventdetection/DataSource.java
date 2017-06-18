@@ -16,7 +16,7 @@ public class DataSource {
 
     private String gpsFile = "/Gps.txt";
     private String gpsModifiedFile = "/GpsModified.txt";
-    private String accFile = "/Acc.txt";
+    private String accFile = "/Acc_processed.txt";
 
     private long accelerometerStart;
     private long accelerometerEnd;
@@ -48,7 +48,7 @@ public class DataSource {
         LocalDateTime gpsEndDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(gpsEnd), ZoneId.systemDefault());
 
         //Convert ns to s
-        double accelerometerTotal = (accelerometerEnd - accelerometerStart) * (1 * Math.pow(10, -9));
+        double accelerometerTotal = (accelerometerEnd - accelerometerStart);
         System.out.println("Acc minutes: " + accelerometerTotal / 60);
 
         double gpsTotal = gpsStartDate.until(gpsEndDate, ChronoUnit.SECONDS);
@@ -72,7 +72,7 @@ public class DataSource {
             }
         }
 
-        scaleRatio = accLines.size() / gpsLines.size();
+        scaleRatio = (double) accLines.size() / (double) gpsLines.size();
     }
 
     public static void main(String[] args) {
@@ -125,9 +125,5 @@ public class DataSource {
 
     public List<String> getAccLines() {
         return accLines;
-    }
-
-    public String getAssociatedGps(int accIndex) {
-        return gpsLines.get((int) Math.round(accIndex / scaleRatio));
     }
 }
