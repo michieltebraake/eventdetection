@@ -115,11 +115,8 @@ public class Main {
         }
     }*/
 
-    public void findEvents() {
-        //Used for debugging purposes
-        List<String> eventLocations = new ArrayList<>();
+    private void findEvents() {
         List<EventLocation> events = new ArrayList<>();
-
         try {
             List<String> accLines = Files.lines(Paths.get("resources/data/david-15-6/Acc_Processed.txt.")).collect(Collectors.toList());
             List<AccelerometerPoint> accelerometerPoints = new ArrayList<>();
@@ -154,7 +151,6 @@ public class Main {
 
                     if (stdDev.getStandardDeviation() > tempRollingStdDev.getStdDev() * 1.2) {
                         System.out.println("Standard deviation is large enough: " + i + ", " + (i + j) + ", factor: " + stdDev.getStandardDeviation() / tempRollingStdDev.getStdDev());
-                        eventLocations.add(i + "," + j);
                         events.add(new EventLocation(accelerometerPoints.get(i), i, i + j));
                     }
                 }
@@ -187,14 +183,19 @@ public class Main {
                     }
                 }
             }
-            filteredEvents.add(new EventLocation(currentEvent.getAccelerometerPoint(), currentStart, currentEnd));
+            //Add last event to events as well
+            if (currentEvent != null) {
+                filteredEvents.add(new EventLocation(currentEvent.getAccelerometerPoint(), currentStart, currentEnd));
+            }
 
+            //Create text output with the location of the events, for debugging purposes
             List<String> filteredEventsStrings = new ArrayList<>();
             for (EventLocation eventLocation : filteredEvents) {
                 filteredEventsStrings.add(eventLocation.getStart() + ", " + (eventLocation.getEnd() - eventLocation.getStart()));
             }
-            Files.write(Paths.get("matlab/events.csv"), filteredEventsStrings);
+            Files.write(Paths.get("output/events.csv"), filteredEventsStrings);
 
+            //Classify all found events
             List<ClassifiedEvent> classifiedEvents = new ArrayList<>();
             for (EventLocation eventLocation : filteredEvents) {
                 System.out.println(eventLocation.getStart() + ", " + eventLocation.getEnd());
@@ -209,6 +210,7 @@ public class Main {
                 classifiedEvents.add(new ClassifiedEvent(comparison.getDistance(), comparison.getType(), eventLocation.getStart(), eventLocation.getEnd(), eventLocation.getAccelerometerPoint().getLat(), eventLocation.getAccelerometerPoint().getLng()));
             }
 
+            //Create files of the classified events with their locations
             List<String> brakeLocations = new ArrayList<>();
             List<String> hardBrakeLocations = new ArrayList<>();
             for (ClassifiedEvent classifiedEvent : classifiedEvents) {

@@ -20,13 +20,40 @@ public class Preprocess {
 
     public static void main(String[] args) {
         try {
-            new Preprocess().processFile("resources/data/david-15-6");
+            Preprocess preprocess = new Preprocess();
+            String file = "resources/data/david-15-6";
+            preprocess.fixGps(file);
+            preprocess.processFile(file);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void processFile(String file) throws IOException {
+    private void fixGps(String file) throws IOException {
+        System.out.println("Fixing gps...");
+        List<String> gpsPoints = Files.lines(Paths.get(file + "Gps.txt")).collect(Collectors.toList());
+
+        long timestamp = 0;
+        for (int i = 0; i < gpsPoints.size(); i++) {
+            String gpsPoint = gpsPoints.get(i);
+            if (timestamp == 0) {
+                timestamp = Long.parseLong(gpsPoint.split(",")[0]);
+            } else {
+                long newTimestamp = Long.parseLong(gpsPoint.split(",")[0]);
+                long diff = (newTimestamp - timestamp) / 1000;
+                while (diff > 1) {
+                    diff--;
+                    gpsPoints.add(i, gpsPoint);
+                    System.out.println((newTimestamp - timestamp) / 1000);
+                }
+                timestamp = newTimestamp;
+            }
+        }
+        Files.write(Paths.get(file + "Gps_Modified.txt"), gpsPoints);
+    }
+
+    private void processFile(String file) throws IOException {
+        System.out.println("Processing accelerometer data...");
         try (Stream<String> stream = Files.lines(Paths.get(file + "/Acc.txt"))) {
             List<String> dataPoints = stream.collect(Collectors.toList());
             List<String> resultPoints = new ArrayList<>();
