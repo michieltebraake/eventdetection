@@ -31,7 +31,7 @@ public class Preprocess {
 
     private void fixGps(String file) throws IOException {
         System.out.println("Fixing gps...");
-        List<String> gpsPoints = Files.lines(Paths.get(file + "Gps.txt")).collect(Collectors.toList());
+        List<String> gpsPoints = Files.lines(Paths.get(file + "/Gps.txt")).collect(Collectors.toList());
 
         long timestamp = 0;
         for (int i = 0; i < gpsPoints.size(); i++) {

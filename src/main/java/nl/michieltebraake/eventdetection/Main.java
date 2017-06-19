@@ -25,11 +25,6 @@ public class Main {
     private List<Event> brakingEvents;
     private List<Event> hardBrakingEvents;
 
-    private double maxWindowSize = 100;
-
-    // Size of blocks that are checked, smaller = more precise but requires more processing power
-    private int blockSize = 10;
-
     public Main() {
         buildReferenceData();
         //compareReferenceData();
@@ -134,12 +129,14 @@ public class Main {
             //Initialize the standard deviation
             RollingStandardDeviation rollingStdDev = new RollingStandardDeviation(initialStdDev.getMean(), initialStdDev.getStandardDeviation(), initAmount);
             for (int i = initAmount; i < accelerometerPoints.size(); i++) {
+                int blockSize = 6;
                 if (i % blockSize != 0) {
                     rollingStdDev.addPoint(accelerometerPoints.get(i).getY());
                     continue;
                 }
 
                 RollingStandardDeviation tempRollingStdDev = rollingStdDev.clone();
+                double maxWindowSize = 20;
                 for (int j = 0; j < maxWindowSize && i + j < accelerometerPoints.size(); j++) {
                     if (j == 0 || j % blockSize != 0) {
                         double value = accelerometerPoints.get(i + j).getY();
@@ -206,8 +203,10 @@ public class Main {
                     seriesBuilder.add(value);
                 }
 
+                AccelerometerPoint centerLocation = accelerometerPoints.get((eventLocation.getStart() + eventLocation.getEnd()) / 2);
+
                 EventComparison comparison = compareWithReferences(seriesBuilder.getTimeSeries());
-                classifiedEvents.add(new ClassifiedEvent(comparison.getDistance(), comparison.getType(), eventLocation.getStart(), eventLocation.getEnd(), eventLocation.getAccelerometerPoint().getLat(), eventLocation.getAccelerometerPoint().getLng()));
+                classifiedEvents.add(new ClassifiedEvent(comparison.getDistance(), comparison.getType(), eventLocation.getStart(), eventLocation.getEnd(), centerLocation.getLat(), centerLocation.getLng()));
             }
 
             //Create files of the classified events with their locations
