@@ -20,7 +20,7 @@ public class Preprocess {
 
     public static void main(String[] args) {
         try {
-            new Preprocess().processFile("resources/data/sander-15-6");
+            new Preprocess().processFile("resources/data/david-15-6");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -42,7 +42,7 @@ public class Preprocess {
             AccelerometerPoint firstPoint = new AccelerometerPoint(dataPoints.get(0));
             AccelerometerPoint finalPoint = new AccelerometerPoint(dataPoints.get(dataPoints.size() - 1));
             double totalSeconds = (finalPoint.getTimestamp() - firstPoint.getTimestamp()) * (1 * Math.pow(10, -9));
-            List<String> gpsPoints = Files.lines(Paths.get(file + "/Gps.txt")).collect(Collectors.toList());
+            List<String> gpsPoints = Files.lines(Paths.get(file + "/Gps_Modified.txt")).collect(Collectors.toList());
 
             //Remove the extra GPS points
             while (gpsPoints.size() > (totalSeconds + 1)) {

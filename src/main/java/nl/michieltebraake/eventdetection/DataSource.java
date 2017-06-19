@@ -16,7 +16,7 @@ public class DataSource {
 
     private String gpsFile = "/Gps.txt";
     private String gpsModifiedFile = "/GpsModified.txt";
-    private String accFile = "/Acc_processed.txt";
+    private String accFile = "/Acc.txt";
 
     private long accelerometerStart;
     private long accelerometerEnd;
@@ -78,7 +78,7 @@ public class DataSource {
     public static void main(String[] args) {
         //new DataSource("resources/data/michiel-15-6");
         try {
-            new DataSource("resources/data/sander-15-6");
+            //new DataSource("resources/data/sander-15-6");
             new DataSource("resources/data/david-15-6");
         } catch (IOException e) {
             e.printStackTrace();

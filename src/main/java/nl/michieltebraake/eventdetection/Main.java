@@ -121,9 +121,9 @@ public class Main {
         List<EventLocation> events = new ArrayList<>();
 
         try {
-            DataSource dataSource = new DataSource("resources/data/sander-15-6");
+            List<String> accLines = Files.lines(Paths.get("resources/data/david-15-6/Acc_Processed.txt.")).collect(Collectors.toList());
             List<AccelerometerPoint> accelerometerPoints = new ArrayList<>();
-            for (String accelerometerString : dataSource.getAccLines()) {
+            for (String accelerometerString : accLines) {
                 accelerometerPoints.add(new AccelerometerPoint(accelerometerString));
             }
 
