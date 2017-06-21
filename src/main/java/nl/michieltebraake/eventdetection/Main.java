@@ -324,6 +324,8 @@ public class Main {
                     continue;
                 }
 
+                //double value = accelerometerPoints.get(i).getY();
+
                 Mean tempMean = mean.clone();
                 double maxWindowSize = 50;
 
@@ -378,6 +380,7 @@ public class Main {
             //Create files of the classified events with their locations
             List<String> brakeLocations = new ArrayList<>();
             List<String> hardBrakeLocations = new ArrayList<>();
+            List<String> eventStartEnds = new ArrayList<>();
             for (ClassifiedEvent classifiedEvent : filteredEvents) {
                 System.out.println(classifiedEvent);
                 if (classifiedEvent.getType() == EventType.BRAKING) {
@@ -385,8 +388,11 @@ public class Main {
                 } else if (classifiedEvent.getType() == EventType.HARD_BRAKING) {
                     hardBrakeLocations.add(classifiedEvent.getLat() + "," + classifiedEvent.getLng());
                 }
+                eventStartEnds.add(classifiedEvent.getStart() + "," + (classifiedEvent.getEnd() - classifiedEvent.getStart()));
             }
 
+
+            Files.write(Paths.get("output/events.csv"), eventStartEnds);
             Files.write(Paths.get("output/brake_locations.csv"), brakeLocations);
             Files.write(Paths.get("output/hard_brake_locations.csv"), hardBrakeLocations);
         } catch (IOException e) {
