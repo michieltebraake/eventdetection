@@ -25,8 +25,10 @@ public class Main {
     private List<Event> brakingEvents;
     private List<Event> hardBrakingEvents;
 
+    private boolean useStdDev = false;
+
     public Main() {
-        buildReferenceData();
+        buildNewReferenceData();
         //compareReferenceData();
         //findBrakingEvents();
         //bruteForceFind();
@@ -62,6 +64,34 @@ public class Main {
             hardBrakingEvents.add(new Event(dataFile, null, time.getStart(), time.getEnd(), EventType.HARD_BRAKING));
         }
         allEvents.put(EventType.HARD_BRAKING, hardBrakingEvents);
+    }
+
+    private void buildNewReferenceData() {
+        System.out.println("Building reference data...");
+        List<EventTime> brakingEventTimes = new ArrayList<>();
+        brakingEventTimes.add(new EventTime(1340, 1380));
+        brakingEventTimes.add(new EventTime(1460, 1510));
+        brakingEventTimes.add(new EventTime(1600, 1630));
+        brakingEventTimes.add(new EventTime(1850, 1900));
+
+        brakingEvents = new ArrayList<>();
+        for (EventTime time : brakingEventTimes) {
+            brakingEvents.add(new Event("resources/data/michiel-15-6/Acc_Processed.txt", null, time.getStart(), time.getEnd(), EventType.BRAKING));
+        }
+        allEvents.put(EventType.BRAKING, brakingEvents);
+
+        List<EventTime> hardBrakingEventTimes = new ArrayList<>();
+        hardBrakingEventTimes.add(new EventTime(8780, 8810));
+        hardBrakingEventTimes.add(new EventTime(8820, 8850));
+        hardBrakingEventTimes.add(new EventTime(8910, 8940));
+        hardBrakingEventTimes.add(new EventTime(8960, 8990));
+
+        hardBrakingEvents = new ArrayList<>();
+        for (EventTime time : hardBrakingEventTimes) {
+            hardBrakingEvents.add(new Event("resources/data/michiel-15-6/Acc_Processed.txt", null, time.getStart(), time.getEnd(), EventType.HARD_BRAKING));
+        }
+        allEvents.put(EventType.HARD_BRAKING, hardBrakingEvents);
+        System.out.println("Done building reference data.");
     }
 
     private void compareReferenceData() {
@@ -113,45 +143,75 @@ public class Main {
     private void findEvents() {
         List<EventLocation> events = new ArrayList<>();
         try {
-            List<String> accLines = Files.lines(Paths.get("resources/data/david-15-6/Acc_Processed.txt.")).collect(Collectors.toList());
+            List<String> accLines = Files.lines(Paths.get("resources/data/sander-15-6/Acc_Processed.txt.")).collect(Collectors.toList());
             List<AccelerometerPoint> accelerometerPoints = new ArrayList<>();
             for (String accelerometerString : accLines) {
                 accelerometerPoints.add(new AccelerometerPoint(accelerometerString));
             }
 
-            List<Double> initValues = new ArrayList<>();
-            int initAmount = 3;
-            for (int i = 0; i < initAmount; i++) {
-                initValues.add(accelerometerPoints.get(i).getY());
-            }
-            StandardDeviation initialStdDev = StandardDeviation.calculateStdDev(initValues);
-
-            //Initialize the standard deviation
-            RollingStandardDeviation rollingStdDev = new RollingStandardDeviation(initialStdDev.getMean(), initialStdDev.getStandardDeviation(), initAmount);
-            for (int i = initAmount; i < accelerometerPoints.size(); i++) {
-                int blockSize = 6;
-                if (i % blockSize != 0) {
-                    rollingStdDev.addPoint(accelerometerPoints.get(i).getY());
-                    continue;
+            if (useStdDev) {
+                List<Double> initValues = new ArrayList<>();
+                int initAmount = 3;
+                for (int i = 0; i < initAmount; i++) {
+                    initValues.add(accelerometerPoints.get(i).getY());
                 }
+                StandardDeviation initialStdDev = StandardDeviation.calculateStdDev(initValues);
 
-                RollingStandardDeviation tempRollingStdDev = rollingStdDev.clone();
-                double maxWindowSize = 20;
-                for (int j = 0; j < maxWindowSize && i + j < accelerometerPoints.size(); j++) {
-                    if (j == 0 || j % blockSize != 0) {
-                        double value = accelerometerPoints.get(i + j).getY();
-                        tempRollingStdDev.addPoint(value);
+                //Initialize the standard deviation
+                RollingStandardDeviation rollingStdDev = new RollingStandardDeviation(initialStdDev.getMean(), initialStdDev.getStandardDeviation(), initAmount);
+                for (int i = initAmount; i < accelerometerPoints.size(); i++) {
+                    int blockSize = 6;
+                    if (i % blockSize != 0) {
+                        rollingStdDev.addPoint(accelerometerPoints.get(i).getY());
                         continue;
                     }
 
-                    StandardDeviation stdDev = StandardDeviation.calculateStdDevAccPoint(accelerometerPoints.subList(i, i + j));
+                    RollingStandardDeviation tempRollingStdDev = rollingStdDev.clone();
+                    double maxWindowSize = 50;
+                    for (int j = 0; j < maxWindowSize && i + j < accelerometerPoints.size(); j++) {
+                        if (j == 0 || j % blockSize != 0) {
+                            double value = accelerometerPoints.get(i + j).getY();
+                            tempRollingStdDev.addPoint(value);
+                            continue;
+                        }
 
-                    if (stdDev.getStandardDeviation() > tempRollingStdDev.getStdDev() * 1.2) {
-                        System.out.println("Standard deviation is large enough: " + i + ", " + (i + j) + ", factor: " + stdDev.getStandardDeviation() / tempRollingStdDev.getStdDev());
-                        events.add(new EventLocation(accelerometerPoints.get(i), i, i + j));
+                        StandardDeviation stdDev = StandardDeviation.calculateStdDevAccPoint(accelerometerPoints.subList(i, i + j));
+
+                        if (stdDev.getStandardDeviation() > tempRollingStdDev.getStdDev() * 1.2) {
+                            System.out.println("Standard deviation is large enough: " + i + ", " + (i + j) + ", factor: " + stdDev.getStandardDeviation() / tempRollingStdDev.getStdDev());
+                            events.add(new EventLocation(accelerometerPoints.get(i), i, i + j));
+                        }
+                    }
+                }
+            } else {
+                Mean mean = new Mean();
+                for (int i = 0; i < accelerometerPoints.size(); i++) {
+                    int blockSize = 6;
+                    if (i % blockSize != 0) {
+                        mean.addPoint(accelerometerPoints.get(i).getY());
+                        continue;
+                    }
+
+                    Mean tempMean = mean.clone();
+                    double maxWindowSize = 50;
+                    for (int j = 0; j < maxWindowSize && i + j < accelerometerPoints.size(); j++) {
+                        if (j < 12 || j % blockSize != 0) {
+                            double value = accelerometerPoints.get(i + j).getY();
+                            tempMean.addPoint(value);
+                            continue;
+                        }
+
+                        double currentMean = Mean.getMean(accelerometerPoints.subList(i, i + j));
+
+                        if (tempMean.getMean() - currentMean > 0.2) {
+                            System.out.println("Mean difference is large enough: " + i + ", " + (i + j) + ", difference: " + Math.abs(tempMean.getMean() - currentMean));
+                            events.add(new EventLocation(accelerometerPoints.get(i), i, i + j));
+                        }
                     }
                 }
             }
+
+
 
             //Of all collected events, take the lowest matching start i and highest end y
             List<EventLocation> filteredEvents = new ArrayList<>();
@@ -187,10 +247,6 @@ public class Main {
 
             //Create text output with the location of the events, for debugging purposes
             List<String> filteredEventsStrings = new ArrayList<>();
-            for (EventLocation eventLocation : filteredEvents) {
-                filteredEventsStrings.add(eventLocation.getStart() + ", " + (eventLocation.getEnd() - eventLocation.getStart()));
-            }
-            Files.write(Paths.get("output/events.csv"), filteredEventsStrings);
 
             //Classify all found events
             List<ClassifiedEvent> classifiedEvents = new ArrayList<>();
@@ -198,16 +254,38 @@ public class Main {
                 System.out.println(eventLocation.getStart() + ", " + eventLocation.getEnd());
                 EventSeriesBuilder seriesBuilder = new EventSeriesBuilder();
 
+                int bestStart = -1;
+                int bestEnd = -1;
+                EventComparison bestComparison = null;
+                int blockSize = 6;
+
                 for (int i = eventLocation.getStart(); i <= eventLocation.getEnd(); i++) {
                     double value = accelerometerPoints.get(i).getY();
                     seriesBuilder.add(value);
+                    if (i > 0 && i % blockSize == 0) {
+                        EventComparison comparison = compareWithReferences(seriesBuilder.getTimeSeries());
+                        if (bestComparison == null) {
+                            bestComparison = comparison;
+                            bestStart = eventLocation.getStart();
+                            bestEnd = i;
+                        } else if (comparison.getDistance() < bestComparison.getDistance()) {
+                            bestComparison = comparison;
+                            bestEnd = i;
+                        }
+                    }
                 }
 
-                AccelerometerPoint centerLocation = accelerometerPoints.get((eventLocation.getStart() + eventLocation.getEnd()) / 2);
+                if (bestComparison != null && bestComparison.getDistance() < 20) {
+                    AccelerometerPoint centerLocation = accelerometerPoints.get((bestStart + bestEnd) / 2);
+                    classifiedEvents.add(new ClassifiedEvent(bestComparison.getDistance(), bestComparison.getType(), bestStart, bestEnd, centerLocation.getLat(), centerLocation.getLng()));
 
-                EventComparison comparison = compareWithReferences(seriesBuilder.getTimeSeries());
-                classifiedEvents.add(new ClassifiedEvent(comparison.getDistance(), comparison.getType(), eventLocation.getStart(), eventLocation.getEnd(), centerLocation.getLat(), centerLocation.getLng()));
+                    //For debugging purposes:
+                    if (bestComparison.getType() == EventType.HARD_BRAKING) {
+                        filteredEventsStrings.add(bestStart + "," + (bestEnd - bestStart) + "," + bestComparison.getDistance());
+                    }
+                }
             }
+            Files.write(Paths.get("output/events.csv"), filteredEventsStrings);
 
             //Create files of the classified events with their locations
             List<String> brakeLocations = new ArrayList<>();
@@ -215,9 +293,9 @@ public class Main {
             for (ClassifiedEvent classifiedEvent : classifiedEvents) {
                 System.out.println(classifiedEvent);
                 if (classifiedEvent.getType() == EventType.BRAKING) {
-                    brakeLocations.add(classifiedEvent.getLat() + ", " + classifiedEvent.getLng());
+                    brakeLocations.add(classifiedEvent.getLat() + "," + classifiedEvent.getLng());
                 } else if (classifiedEvent.getType() == EventType.HARD_BRAKING) {
-                    hardBrakeLocations.add(classifiedEvent.getLat() + ", " + classifiedEvent.getLng());
+                    hardBrakeLocations.add(classifiedEvent.getLat() + "," + classifiedEvent.getLng());
                 }
             }
 

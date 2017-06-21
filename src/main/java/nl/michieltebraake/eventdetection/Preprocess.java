@@ -13,7 +13,7 @@ import java.util.stream.Stream;
  */
 public class Preprocess {
     // Number of data points to average over
-    private int n = 39;
+    private int n = 1;
 
     // Number of data points to group together into one point
     private int groupSize = 20;
@@ -21,9 +21,9 @@ public class Preprocess {
     public static void main(String[] args) {
         try {
             Preprocess preprocess = new Preprocess();
-            String file = "resources/data/david-15-6";
+            String file = "resources/data/david-15-6/";
             preprocess.fixGps(file);
-            preprocess.processFile(file);
+            preprocess.processFile(file, true);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -31,7 +31,7 @@ public class Preprocess {
 
     private void fixGps(String file) throws IOException {
         System.out.println("Fixing gps...");
-        List<String> gpsPoints = Files.lines(Paths.get(file + "/Gps.txt")).collect(Collectors.toList());
+        List<String> gpsPoints = Files.lines(Paths.get(file + "Gps.txt")).collect(Collectors.toList());
 
         long timestamp = 0;
         for (int i = 0; i < gpsPoints.size(); i++) {
@@ -50,11 +50,11 @@ public class Preprocess {
             }
         }
         Files.write(Paths.get(file + "Gps_Modified.txt"), gpsPoints);
-    }
+}
 
-    private void processFile(String file) throws IOException {
+    private void processFile(String file, boolean useExponentialAverage) throws IOException {
         System.out.println("Processing accelerometer data...");
-        try (Stream<String> stream = Files.lines(Paths.get(file + "/Acc.txt"))) {
+        try (Stream<String> stream = Files.lines(Paths.get(file + "Acc.txt"))) {
             List<String> dataPoints = stream.collect(Collectors.toList());
             List<String> resultPoints = new ArrayList<>();
 
@@ -66,10 +66,15 @@ public class Preprocess {
             double sumY = 0;
             double sumZ = 0;
 
+            double alpha = 0.01;
+            ExponentialMovingAverage expX = new ExponentialMovingAverage(alpha);
+            ExponentialMovingAverage expY = new ExponentialMovingAverage(alpha);
+            ExponentialMovingAverage expZ = new ExponentialMovingAverage(alpha);
+
             AccelerometerPoint firstPoint = new AccelerometerPoint(dataPoints.get(0));
             AccelerometerPoint finalPoint = new AccelerometerPoint(dataPoints.get(dataPoints.size() - 1));
             double totalSeconds = (finalPoint.getTimestamp() - firstPoint.getTimestamp()) * (1 * Math.pow(10, -9));
-            List<String> gpsPoints = Files.lines(Paths.get(file + "/Gps_Modified.txt")).collect(Collectors.toList());
+            List<String> gpsPoints = Files.lines(Paths.get(file + "Gps_Modified.txt")).collect(Collectors.toList());
 
             //Remove the extra GPS points
             while (gpsPoints.size() > (totalSeconds + 1)) {
@@ -87,28 +92,38 @@ public class Preprocess {
                     gpsIndex++;
                 }
 
-                sumX -= averageX[i % n];
-                sumY -= averageY[i % n];
-                sumZ -= averageZ[i % n];
+                if (useExponentialAverage) {
+                    expX.average(dataPoint.getX());
+                    expY.average(dataPoint.getY());
+                    expZ.average(dataPoint.getZ());
+                } else {
+                    sumX -= averageX[i % n];
+                    sumY -= averageY[i % n];
+                    sumZ -= averageZ[i % n];
 
-                averageX[i % n] = dataPoint.getX();
-                averageY[i % n] = dataPoint.getY();
-                averageZ[i % n] = dataPoint.getZ();
+                    averageX[i % n] = dataPoint.getX();
+                    averageY[i % n] = dataPoint.getY();
+                    averageZ[i % n] = dataPoint.getZ();
 
-                sumX += averageX[i % n];
-                sumY += averageY[i % n];
-                sumZ += averageZ[i % n];
+                    sumX += averageX[i % n];
+                    sumY += averageY[i % n];
+                    sumZ += averageZ[i % n];
+                }
 
                 if (i >= n && i % groupSize == 0) {
                     String[] gpsString = gpsPoints.get(gpsIndex).split(",");
                     String gpsTimestamp = gpsString[0];
                     String lat = gpsString[2];
                     String lng = gpsString[3];
-                    resultPoints.add(new AccelerometerPoint(dataPoint.getTimestamp(), sumX / n, sumY / n, sumZ / n, gpsTimestamp, lat, lng).toString());
+                    if (useExponentialAverage) {
+                        resultPoints.add(new AccelerometerPoint(dataPoint.getTimestamp(), expX.getAverage(), expY.getAverage(), expZ.getAverage(), gpsTimestamp, lat, lng).toString());
+                    } else {
+                        resultPoints.add(new AccelerometerPoint(dataPoint.getTimestamp(), sumX / n, sumY / n, sumZ / n, gpsTimestamp, lat, lng).toString());
+                    }
                 }
             }
 
-            Files.write(Paths.get(file + "/Acc_Processed.txt"), resultPoints);
+            Files.write(Paths.get(file + "Acc_Processed.txt"), resultPoints);
         }
     }
 }

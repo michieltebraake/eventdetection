@@ -44,7 +44,7 @@ public class Event extends EventLocation {
                 }
 
                 if (inEvent) {
-                    seriesBuilder.add(seriesIndex, Double.parseDouble(list.get(i)));
+                    seriesBuilder.add(seriesIndex, Double.parseDouble(list.get(i).split(",")[2]));
                     seriesIndex++;
                 }
             }
