@@ -43,7 +43,7 @@ public class PerformanceTester {
         int correctlyIdentifiedHardBraking = 0;
         int wronglyIdentifiedHardBraking = 0;
         for (ClassifiedEvent classifiedEvent : foundEvents) {
-            if (classifiedEvent.getType() == EventType.BRAKING && classifiedEvent.getStart() > 10700) {
+            if (classifiedEvent.getType() == EventType.BRAKING && classifiedEvent.getStart() > Preprocess.groupSizeFactor * 10700) {
                 boolean foundMatch = false;
                 for (EventTime eventTime : brakingLabeled) {
                     if (overlap(classifiedEvent, eventTime)) {
@@ -59,7 +59,7 @@ public class PerformanceTester {
             }
         }
         for (ClassifiedEvent classifiedEvent : foundEvents) {
-            if (classifiedEvent.getType() == EventType.HARD_BRAKING && classifiedEvent.getStart() > 13300) {
+            if (classifiedEvent.getType() == EventType.HARD_BRAKING && classifiedEvent.getStart() > Preprocess.groupSizeFactor * 13300) {
                 boolean foundMatch = false;
                 for (EventTime eventTime : hardBrakingLabeled) {
                     if (overlap(classifiedEvent, eventTime)) {

@@ -172,16 +172,16 @@ public class Main {
                 if (recognitionType == 0) {
                     Mean mean = new Mean();
                     for (int i = 0; i < accelerometerPoints.size(); i++) {
-                        int blockSize = 5;
+                        int blockSize = (int) Math.round(Preprocess.groupSizeFactor * 5);
                         if (i % blockSize != 0) {
                             mean.addPoint(accelerometerPoints.get(i).getY());
                             continue;
                         }
 
                         Mean tempMean = mean.clone();
-                        double maxWindowSize = 50;
+                        double maxWindowSize = Preprocess.groupSizeFactor * 50;
                         for (int j = 0; j < maxWindowSize && i + j < accelerometerPoints.size(); j++) {
-                            if (j < 12 || j % blockSize != 0) {
+                            if (j < Preprocess.groupSizeFactor * 12 || j % blockSize != 0) {
                                 double value = accelerometerPoints.get(i + j).getY();
                                 tempMean.addPoint(value);
                                 continue;
@@ -206,14 +206,14 @@ public class Main {
                     //Initialize the standard deviation
                     RollingStandardDeviation rollingStdDev = new RollingStandardDeviation(initialStdDev.getMean(), initialStdDev.getStandardDeviation(), initAmount);
                     for (int i = initAmount; i < accelerometerPoints.size(); i++) {
-                        int blockSize = 5;
+                        int blockSize = (int) Math.round(Preprocess.groupSizeFactor * 5);
                         if (i % blockSize != 0) {
                             rollingStdDev.addPoint(accelerometerPoints.get(i).getY());
                             continue;
                         }
 
                         RollingStandardDeviation tempRollingStdDev = rollingStdDev.clone();
-                        double maxWindowSize = 50;
+                        double maxWindowSize = Preprocess.groupSizeFactor * 50;
                         for (int j = 0; j < maxWindowSize && i + j < accelerometerPoints.size(); j++) {
                             if (j == 0 || j % blockSize != 0) {
                                 double value = accelerometerPoints.get(i + j).getY();
@@ -276,7 +276,7 @@ public class Main {
                     int bestStart = -1;
                     int bestEnd = -1;
                     EventComparison bestComparison = null;
-                    int blockSize = 6;
+                    int blockSize = (int) Math.round(Preprocess.groupSizeFactor * 6);
 
                     for (int i = eventLocation.getStart(); i <= eventLocation.getEnd(); i++) {
                         double value = accelerometerPoints.get(i).getY();
