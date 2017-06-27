@@ -14,13 +14,24 @@ public class PerformanceTester {
     private String dataFile = "resources/data/temp.txt";
 
     public PerformanceTester() {
+        Preprocess preprocess = new Preprocess();
+        String file = "resources/data/sander-15-6/";
+        try {
+            preprocess.fixGps(file);
+            preprocess.processFile(file, true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Running performance tests...");
+
         main.setBrakingEvents(labeledData.getBrakingTraining(), dataFile);
         main.setHardBrakingEvents(labeledData.getHardBrakingTraining(), dataFile);
 
         //compareTimeSeries();
         runTest(0, 0);
-        runTest(1, 0);
-        runTest(0, 1);
+        //runTest(1, 0);
+        //runTest(0, 1);
         //runTest(1, 1);
     }
 
@@ -29,19 +40,22 @@ public class PerformanceTester {
     }
 
     private void compareTimeSeries() {
-        EventComparison comparison = main.compareWithReferences(new Event(dataFile, null, 12680, 12720, null).getTimeSeries());
+        EventComparison comparison = main.compareWithReferences(new Event(dataFile, null, 13550, 13580, null).getTimeSeries());
         System.out.println("Debug here");
     }
 
     private void runTest(int recognitionType, int classificationType) {
+        long startTime = System.currentTimeMillis();
         List<ClassifiedEvent> foundEvents = main.findEvents(recognitionType, classificationType);
 
         List<EventTime> brakingLabeled = labeledData.getBrakingLabeled();
         List<EventTime> hardBrakingLabeled = labeledData.getHardBrakingLabeled();
         int correctlyIdentifiedBraking = 0;
         int wronglyIdentifiedBraking = 0;
+        int missedBraking = 0;
         int correctlyIdentifiedHardBraking = 0;
         int wronglyIdentifiedHardBraking = 0;
+        int missedHardBraking = 0;
         for (ClassifiedEvent classifiedEvent : foundEvents) {
             if (classifiedEvent.getType() == EventType.BRAKING && classifiedEvent.getStart() > Preprocess.groupSizeFactor * 10700) {
                 boolean foundMatch = false;
@@ -52,9 +66,16 @@ public class PerformanceTester {
                         break;
                     }
                 }
+                for (EventTime eventTime : hardBrakingLabeled) {
+                    if (overlap(classifiedEvent, eventTime)) {
+                        foundMatch = true;
+                        wronglyIdentifiedBraking++;
+                        break;
+                    }
+                }
                 if (!foundMatch) {
                     //In case no matching event was found, it was wrongly identified
-                    wronglyIdentifiedBraking++;
+                    missedBraking++;
                 }
             }
         }
@@ -68,16 +89,23 @@ public class PerformanceTester {
                         break;
                     }
                 }
+                for (EventTime eventTime : brakingLabeled) {
+                    if (overlap(classifiedEvent, eventTime)) {
+                        foundMatch = true;
+                        wronglyIdentifiedHardBraking++;
+                        break;
+                    }
+                }
                 if (!foundMatch) {
                     //In case no matching event was found, it was wrongly identified
-                    wronglyIdentifiedHardBraking++;
+                    missedHardBraking++;
                 }
             }
         }
         saveEventsCsv(foundEvents);
-        int missedBraking = brakingLabeled.size() - correctlyIdentifiedBraking;
-        int missedHardBraking = hardBrakingLabeled.size() - correctlyIdentifiedHardBraking;
 
+        long endTime = System.currentTimeMillis();
+        long timeElapsed = endTime - startTime;
         System.out.println("Type: " + recognitionType + ", " + classificationType);
         System.out.println("=== Braking Recognition ===");
         System.out.println("Correct: " + correctlyIdentifiedBraking + " / " + brakingLabeled.size());
@@ -87,6 +115,11 @@ public class PerformanceTester {
         System.out.println("Correct: " + correctlyIdentifiedHardBraking + " / " + hardBrakingLabeled.size());
         System.out.println("Incorrect: " + wronglyIdentifiedHardBraking);
         System.out.println("Missed: " + missedHardBraking);
+        System.out.println("Time elapsed: " + timeElapsed + "ms");
+
+        IntersectionMapper intersectionMapper = new IntersectionMapper();
+        intersectionMapper.mapLocations(foundEvents);
+
         System.out.println("=== Done ===");
     }
 

@@ -1,5 +1,7 @@
 package nl.michieltebraake.eventdetection.event;
 
+import nl.michieltebraake.eventdetection.Coordinate;
+
 public class ClassifiedEvent {
     private double distance;
     private EventType type;
@@ -47,6 +49,10 @@ public class ClassifiedEvent {
 
     public String getLng() {
         return lng;
+    }
+
+    public Coordinate getCoordinate () {
+        return new Coordinate(Double.parseDouble(lat), Double.parseDouble(lng));
     }
 
     @Override

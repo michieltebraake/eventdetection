@@ -108,7 +108,7 @@ public class LabeledData {
         hardBrakingLabeled.add(new EventTime(13640, 13690));
         hardBrakingLabeled.add(new EventTime(14190, 14210));
         hardBrakingLabeled.add(new EventTime(14220, 14240));
-        hardBrakingLabeled.add(new EventTime(14270, 14290));
+        hardBrakingLabeled.add(new EventTime(14260, 14280));
         hardBrakingLabeled.add(new EventTime(14300, 14320));
         hardBrakingLabeled.add(new EventTime(14350, 14370));
         hardBrakingLabeled.add(new EventTime(17155, 17185));

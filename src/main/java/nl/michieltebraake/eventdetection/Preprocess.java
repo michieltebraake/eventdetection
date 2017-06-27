@@ -12,6 +12,10 @@ import java.util.stream.Stream;
  * Preprocess accelerometer data to decrease the number of data points as well as taking a moving average
  */
 public class Preprocess {
+    public static int sampleGroupSize = 10;
+
+    public static double groupSizeFactor = (double) 20 / (double) sampleGroupSize;
+
     // Number of data points to average over
     private int n = 200;
 
@@ -29,7 +33,7 @@ public class Preprocess {
         }
     }
 
-    private void fixGps(String file) throws IOException {
+    public void fixGps(String file) throws IOException {
         System.out.println("Fixing gps...");
         List<String> gpsPoints = Files.lines(Paths.get(file + "Gps.txt")).collect(Collectors.toList());
 
@@ -52,7 +56,7 @@ public class Preprocess {
         Files.write(Paths.get(file + "Gps_Modified.txt"), gpsPoints);
     }
 
-    private void processFile(String file, boolean useExponentialAverage) throws IOException {
+    public void processFile(String file, boolean useExponentialAverage) throws IOException {
         int tempInt = 0;
         System.out.println("Processing accelerometer data...");
         try (Stream<String> stream = Files.lines(Paths.get(file + "Acc.txt"))) {
@@ -111,12 +115,11 @@ public class Preprocess {
                     sumZ += averageZ[i % n];
                 }
 
-                if (i >= n && i % groupSize == 0) {
-                    if ((i / groupSize) >= 10280 && (i / groupSize) <= 10400) {
-                        tempInt++;
+                if (i >= n && i % sampleGroupSize == 0) {
+                    if (i >= 205600 && i <= 208000) {
                         continue;
-                    } else if ((i / groupSize) >= 17976) {
-                        //tempInt++;
+                    } else if (i >= 359520) {
+                        tempInt++;
                         continue;
                     }
                     String[] gpsString = gpsPoints.get(gpsIndex).split(",");
