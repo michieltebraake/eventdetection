@@ -9,12 +9,20 @@ import java.util.List;
 import java.util.Map;
 
 public class IntersectionMapper {
-     private HashMap<String, Coordinate> intersections = new HashMap<>();
-     private HashMap<String, Integer> brakeCount = new HashMap<>();
+    private HashMap<String, Coordinate> intersections = new HashMap<>();
+    private HashMap<String, Integer> brakeCount = new HashMap<>();
 
-         private Coordinate pedestrianTopRight = new Coordinate(52.222465, 6.896042);
-     private Coordinate pedestrianBottomLeft = new Coordinate(52.220844, 6.892577);
-     private String pedestrianAreaName = "Voetgangersgebied";
+    private Coordinate pedestrianTopRight = new Coordinate(52.222465, 6.896042);
+    private Coordinate pedestrianBottomLeft = new Coordinate(52.220844, 6.892577);
+    private String pedestrianAreaName = "Voetgangersgebied";
+
+    public IntersectionMapper() {
+        intersections.put("Station", new Coordinate(52.223182, 6.892320));
+        intersections.put("Wellinkgaarde", new Coordinate(52.223578, 6.895530));
+        intersections.put("Brakmanstraat", new Coordinate(52.224621, 6.895026));
+        intersections.put("Deurningerstraat", new Coordinate(52.224486, 6.89163));
+        intersections.put("Wilminktheater", new Coordinate(52.222417, 6.892828));
+    }
 
     public static void main(String[] args) {
         IntersectionMapper intersectionMapper = new IntersectionMapper();
@@ -24,60 +32,14 @@ public class IntersectionMapper {
         intersectionMapper.mapLocations(events);
     }
 
-     public IntersectionMapper() {
-        intersections.put("Station", new Coordinate(52.223182, 6.892320));
-        intersections.put("Wellinkgaarde", new Coordinate(52.223578, 6.895530));
-        intersections.put("Brakmanstraat", new Coordinate(52.224621, 6.895026));
-        intersections.put("Deurningerstraat", new Coordinate(52.224486, 6.89163));
-        intersections.put("Wilminktheater", new Coordinate(52.222417, 6.892828));
-    }
-
-    public void mapLocations(List<ClassifiedEvent> events) {
-        for (String intersection : intersections.keySet()) {
-            brakeCount.put(intersection, 0);
-        }
-        brakeCount.put("Voetgangersgebied", 0);
-
-        for (ClassifiedEvent event : events) {
-            if (event.getType() == EventType.BRAKING) {
-                continue;
-            }
-
-            double lowestDistance = 99999;
-            String matchingIntersection = "";
-            for (Map.Entry<String,  Coordinate> entry : intersections.entrySet()) {
-                double distance = distance(event.getCoordinate(), entry.getValue());
-
-                if (distance < lowestDistance) {
-                    lowestDistance = distance;
-                    matchingIntersection = entry.getKey();
-                }
-            }
-
-            if (lowestDistance < 40) {
-                brakeCount.put(matchingIntersection, brakeCount.get(matchingIntersection) + 1);
-            } else {
-                //Check if coordinate is inside pedestrian zone
-                if (event.getCoordinate().getLat() < pedestrianTopRight.getLat() && event.getCoordinate().getLng() < pedestrianTopRight.getLng()
-                        && event.getCoordinate().getLat() > pedestrianBottomLeft.getLat() && event.getCoordinate().getLng() > pedestrianBottomLeft.getLng()) {
-                    brakeCount.put(pedestrianAreaName, brakeCount.get(pedestrianAreaName) + 1);
-                }
-            }
-        }
-
-        System.out.println("=== Intersection brake count ===");
-        for (Map.Entry<String, Integer> brakeEntry : brakeCount.entrySet()) {
-            System.out.println(brakeEntry.getKey() + ", " + brakeEntry.getValue());
-        }
-    }
-
     /**
      * Calculate distance between two points in latitude and longitude taking
      * into account height difference. If you are not interested in height
      * difference pass 0.0. Uses Haversine method as its base.
-     *
+     * <p>
      * lat1, lon1 Start point lat2, lon2 End point el1 Start altitude in meters
      * el2 End altitude in meters
+     *
      * @returns Distance in Meters
      */
     public static double distance(Coordinate coordinate1, Coordinate coordinate2) {
@@ -103,5 +65,44 @@ public class IntersectionMapper {
         distance = Math.pow(distance, 2) + Math.pow(height, 2);
 
         return Math.sqrt(distance);
+    }
+
+    public void mapLocations(List<ClassifiedEvent> events) {
+        for (String intersection : intersections.keySet()) {
+            brakeCount.put(intersection, 0);
+        }
+        brakeCount.put("Voetgangersgebied", 0);
+
+        for (ClassifiedEvent event : events) {
+            if (event.getType() == EventType.BRAKING) {
+                continue;
+            }
+
+            double lowestDistance = 99999;
+            String matchingIntersection = "";
+            for (Map.Entry<String, Coordinate> entry : intersections.entrySet()) {
+                double distance = distance(event.getCoordinate(), entry.getValue());
+
+                if (distance < lowestDistance) {
+                    lowestDistance = distance;
+                    matchingIntersection = entry.getKey();
+                }
+            }
+
+            if (lowestDistance < 40) {
+                brakeCount.put(matchingIntersection, brakeCount.get(matchingIntersection) + 1);
+            } else {
+                //Check if coordinate is inside pedestrian zone
+                if (event.getCoordinate().getLat() < pedestrianTopRight.getLat() && event.getCoordinate().getLng() < pedestrianTopRight.getLng()
+                        && event.getCoordinate().getLat() > pedestrianBottomLeft.getLat() && event.getCoordinate().getLng() > pedestrianBottomLeft.getLng()) {
+                    brakeCount.put(pedestrianAreaName, brakeCount.get(pedestrianAreaName) + 1);
+                }
+            }
+        }
+
+        System.out.println("=== Intersection brake count ===");
+        for (Map.Entry<String, Integer> brakeEntry : brakeCount.entrySet()) {
+            System.out.println(brakeEntry.getKey() + ", " + brakeEntry.getValue());
+        }
     }
 }
